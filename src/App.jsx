@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import Login from './components/Login'
+import ResetPassword from './components/ResetPassword'
 import Dashboard from './components/Dashboard'
 import AccountList from './components/AccountList'
 import AccountForm from './components/AccountForm'
@@ -12,6 +13,7 @@ export default function App() {
   const [editingAccount, setEditingAccount] = useState(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [showResetPassword, setShowResetPassword] = useState(false)
 
   useEffect(() => {
     // Check current session
@@ -21,8 +23,13 @@ export default function App() {
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
+      
+      // Handle password recovery event
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowResetPassword(true)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -55,12 +62,22 @@ export default function App() {
     setActiveTab('accounts')
   }
 
+  const handleResetPasswordComplete = () => {
+    setShowResetPassword(false)
+    // User is already logged in after password reset, so they'll see the dashboard
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-gray-500">Loading...</div>
       </div>
     )
+  }
+
+  // Show Reset Password screen if user clicked reset link
+  if (showResetPassword) {
+    return <ResetPassword onComplete={handleResetPasswordComplete} />
   }
 
   if (!session) {
